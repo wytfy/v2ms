@@ -1,0 +1,5 @@
+{
+  "db_addr": "postgresql://v2:123456@192.168.2.181:5432/v2_ui",
+  "username": "zcy",
+  "password": "1995cy"
+}

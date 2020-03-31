@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% import 'ulist.html' as ulist%}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block title %}V2MS管理系统{% endblock %}
+
+{% block content %}
+
+    <div class="area_1_1" id="form1">
+        {{ wtf.quick_form(server_form,extra_classes="form server_form center-block") }}
+    </div>
+    <div class="area_1_2" id="form2">
+        {{ wtf.quick_form(user_form, extra_classes="form user_form center-block") }}
+    </div>
+    <div class="backplayer" id="bp" onclick="closeAll()"></div>
+
+    <div class="row  tb center-block" id="tb1">
+        {% if hosts %}
+            <h3>现有服务器</h3>
+            <table class="table table-bordered table-hover table-striped">
+                <th>ID</th><th>域名</th><th>后台端口</th><th>管理员账号</th><th>用户数量</th><th></th>
+                {% for host in hosts %}
+                <tr>
+                <td>{{ host.id }}</td><td>{{ host.host }}</td><td>{{ host.port }}</td><td>{{ host.manager }}</td>
+                    <td>{{ host.user_num }}</td><td><button class="hostDel btn btn-primary">删除</button></td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    </div>
+
+    <div class="row  tb center-block " id="tb2">
+        <h3>现有用户</h3>
+        {{ ulist.user_pagination(inbounds, 'v2ms_bp.user_list') }}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+     {{ super() }}
+    <script type="text/javascript" src="{{ url_for('static', filename='jquery.js') }}"></script>
+    <script>
+    function beLHCenter(id){
+        $(id).css({
+            position: "absolute",
+            left: ($(window).width() - $(id).outerWidth())/2,
+            top: ($(window).height() - $(id).outerHeight())/2
+        });
+    }
+    $(function () {
+        beLHCenter("#form1");
+        beLHCenter("#form2");
+    });
+    $(function () {
+        $("#search").keyup(function () {
+            $("#tb2 tr").hide().filter(":contains('" + ($(this).val()) + "')").show();
+        }).keyup();
+    });
+    function addHost() {
+        var addhost = document.getElementById("form1");
+        var adduser = document.getElementById("form2");
+        var bp = document.getElementById("bp");
+        adduser.style.display = "none";
+        bp.style.display = "block";
+        addhost.style.display = "block";
+    }
+    function addUser() {
+        var adduser = document.getElementById("form2");
+        var addhost = document.getElementById("form1");
+        var bp = document.getElementById("bp");
+        addhost.style.display = "none";
+        bp.style.display = "block";
+        adduser.style.display = "block";
+    }
+    function closeAll() {
+        var addhost = document.getElementById("form1");
+        var adduser = document.getElementById("form2");
+        var bg = document.getElementById("bp")
+        addhost.style.display = "none";
+        adduser.style.display = "none";
+        bp.style.display = "none";
+    }
+
+    $(document).ready(function () {
+            $('.turn').click(function (event) {
+                event.preventDefault();
+                var tr = $(this).closest("tr");
+                var id = tr.find("td:eq(0)");
+                $.get("{{ url_for('v2ms_bp.user_suspend') }}", {uid:$(id).text()}, function (get_data) {
+                    if  (get_data=="True"){
+                        tr.find("td:eq(9)").text("是");
+                    }else {
+                        tr.find("td:eq(9)").text("否");
+                    }
+                });
+            });
+        });
+
+    $(document).ready(function () {
+        $('.addMonth').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.add_month') }}", {uid:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    tr.find("td:eq(7)").text(obj.lease_month);
+                    tr.find("td:eq(8)").text(obj.stop_date);
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $('.update').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.update') }}", {uid:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    tr.find("td:eq(4)").text(obj.uuid);
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $('.reset').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.reset') }}", {uid:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    tr.find("td:eq(7)").text(obj.lease_month);
+                    tr.find("td:eq(8)").text(obj.stop_date);
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $('.del').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.user_del') }}", {uid:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    if (obj.del=="True"){
+                        tr.remove();
+                        alert("已删除")
+                    }else{
+                        alert("删除失败，请重试")
+                    }
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $('.hostDel').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.server_delete') }}", {id:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    if (obj.del=="True"){
+                        tr.remove();
+                        alert("已删除")
+                    }else{
+                        alert("删除失败，请重试")
+                    }
+            });
+        });
+    });
+
+        $(document).ready(function () {
+        $('.del').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.user_del') }}", {uid:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    if (obj.del=="True"){
+                        tr.remove();
+                        alert("已删除")
+                    }else{
+                        alert("删除失败，请重试")
+                    }
+            });
+        });
+    });
+
+    $(document).ready(function () {
+        $('.hostDel').click(function (event) {
+            event.preventDefault();
+            var tr = $(this).closest("tr");
+            var id = tr.find("td:eq(0)");
+            $.get("{{ url_for('v2ms_bp.server_delete') }}", {id:$(id).text()}, function (get_data) {
+                    var obj = jQuery.parseJSON(get_data);
+                    if (obj.del=="True"){
+                        tr.remove();
+                        alert("已删除")
+                    }else{
+                        alert("删除失败，请重试")
+                    }
+            });
+        });
+    });
+    </script>
+
+{% endblock %}
